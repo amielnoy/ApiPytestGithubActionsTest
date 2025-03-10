@@ -14,10 +14,10 @@ pip install -r requirements.txt
 
 LOCALLY:
 1.run flask:
-from root folder in terminal run,  
+from root folder in terminal:  
 flask run
 
-2.Run tests
+2.Run tests:
 Python3 -m pytest tests
 
 LOCALLY USING docker:
