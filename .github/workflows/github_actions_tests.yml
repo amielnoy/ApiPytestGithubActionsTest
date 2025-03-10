@@ -11,6 +11,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      FLASK_APP: TestedServer/app.py
+      FLASK_PORT: 5000 # Configurable port
 
     steps:
     - name: Checkout code
@@ -33,7 +36,8 @@ jobs:
     - name: Start Flask server
       run: |
         source .venv/bin/activate
-        nohup flask run &
+        nohup flask run --host=0.0.0.0 -p ${{ FLASK_PORT }} &
+        sleep 15  # Wait for the server to start (adjust as needed)
 
     - name: Run tests
       run: |
