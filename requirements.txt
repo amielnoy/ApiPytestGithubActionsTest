@@ -1,11 +1,10 @@
 py
 pyee
-pyparsing
 pytest
 requests
 text-unidecode
 urllib3
-websockets
 python-dotenv
 jsonify
 flask
+gunicorn
