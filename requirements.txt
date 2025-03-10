@@ -2,10 +2,6 @@ py
 pyee
 pyparsing
 pytest
-pytest-base-url
-pytest-forked
-pytest-playwright
-python-slugify
 requests
 text-unidecode
 urllib3
