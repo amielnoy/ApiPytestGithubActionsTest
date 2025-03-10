@@ -2,9 +2,11 @@ API testing project.
 
 To run the tests:
 
-git clone https://github.com/amielnoy/ApiPytestGithubActionsTest 
+git clone https://github.com/amielnoy/RafaelApiPytestGithubActionsTest 
+
 install:
 1.create virtual env
+
 
 install all packages:
 pip install -r requirements.txt

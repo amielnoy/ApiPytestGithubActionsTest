@@ -38,8 +38,8 @@ class TestsBookAPI(ApiRequests):
         assert response.status_code == ApiHttpConstants.CREATED, \
             f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
         added_book = response.json()
-        assert added_book["title"] == ExpectedResults.EXPECTED_BOOK_TITLE1, \
-            f"Actual book title={added_book['title']} does not match expected book title={ExpectedResults.EXPECTED_BOOK_TITLE1}"
+        assert added_book["title"] == ExpectedResults.EXPECTED_BOOK_TITLE3, \
+            f"Actual book title={added_book['title']} does not match expected book title={ExpectedResults.EXPECTED_BOOK_TITLE3}"
         assert added_book["author"] == ExpectedResults.EXPECTED_BOOK_AUTHOR, \
             f"Actual added book author={added_book['author']} does not match expected book author={ExpectedResults.EXPECTED_BOOK_AUTHOR}"
 
@@ -51,11 +51,36 @@ class TestsBookAPI(ApiRequests):
         assert updated_book["title"] == ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE, \
             f"Actual updated book title={updated_book['title']} does not match expected updated book title={ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE}"
 
+        response = self.put("/books/1", json={"title": ExpectedResults.EXPECTED_BOOK_TITLE1})
+        assert response.status_code == ApiHttpConstants.OK, \
+            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
     def test_update_non_exist_book(self):
         response = self.put("/books/10", json={"title": ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE})
         assert response.status_code == ApiHttpConstants.NOT_FOUND, \
             f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.NOT_FOUND}"
 
+    @pytest.fixture
+    def restore_book_after_deletion(self):
+        api = ApiRequests()
+        book_id = 2  # The ID of the book to restore
+
+        # Setup: Retrieve the book data before the test
+        response = api.get(f"/books/{book_id}")
+        if response.status_code == ApiHttpConstants.OK:
+            original_book_data = response.json()
+        else:
+            original_book_data = None
+
+        yield  # Provide control to the test
+
+        # Teardown: Restore the book if it was deleted
+        if original_book_data:
+            response = api.get(f"/books/{book_id}")
+            if response.status_code == ApiHttpConstants.NOT_FOUND:
+                # If the book was deleted, re-add it
+                response = api.post("/books", json=original_book_data)
+                assert response.status_code == ApiHttpConstants.CREATED, \
+                    f"Teardown failed: Could not restore book. Response code={response.status_code}"
 
     def test_delete_book(self):
         response = self.delete("/books/2")
@@ -64,6 +89,16 @@ class TestsBookAPI(ApiRequests):
         response = self.get("/books")
         assert response.status_code == ApiHttpConstants.OK, \
             f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
+
+        # Verify the book is deleted by checking the list of books
+        response = self.get("/books")
+        assert response.status_code == ApiHttpConstants.OK, \
+            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.OK}"
+        books = response.json()
+
+        # Check that the book with ID 2 is not in the list
+        book_ids = [book['id'] for book in books]
+        assert 2 not in book_ids, "Book with ID 2 was not deleted"
         books = response.json()
         assert len(books) == ExpectedResults.EXPECTED_BOOK_NUMBER, \
             f"Actual numbers of books={len(books)} does not match expected number of books={ExpectedResults.EXPECTED_BOOK_NUMBER}"
@@ -108,6 +143,7 @@ class TestsBookAPI(ApiRequests):
         self.test_add_book()
         self.test_update_book()
 
+    # def test_add_and_delete_new_book(self, restore_after_delete):
     def test_add_and_delete_new_book(self):
         self.test_add_book()
         response = self.delete("/books/3")
