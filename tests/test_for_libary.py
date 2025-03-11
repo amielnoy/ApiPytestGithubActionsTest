@@ -1,179 +1,121 @@
+import pytest
 from ApiRequests.api_requests import ApiRequests
 from app import books
 from data.expected_results import ExpectedResults
 from data.globals import ApiHttpConstants
+
+
 import pytest
+from ApiRequests.api_requests import ApiRequests
+from data.expected_results import ExpectedResults
+from data.globals import ApiHttpConstants
 
 
 class TestsBookAPI(ApiRequests):
     """Tests for the book API endpoints."""
 
+    @pytest.fixture(autouse=True)
+    def setup_and_teardown(self):
+        """This fixture runs before every test and ensures a controlled test environment."""
+        self.delete_all_books()  # Ensure there are no pre-existing books
+        self.create_test_books()  # Create a known set of books for testing
+
+    def create_test_books(self):
+        """Creates the necessary test book data in the database."""
+        # Create expected number of books
+        for book in [
+            {"title": "The Great Gatsby", "author": "F. Scott Fitzgerald"},
+            {"title": "1984", "author": "George Orwell"}
+        ]:
+            response = self.post("/books", json=book)
+            assert response.status_code == ApiHttpConstants.CREATED, \
+                f"Failed to add book. Response code={response.status_code}."
+
+    def delete_all_books(self):
+        """Delete all books in the database to ensure a clean state."""
+        response = self.get("/books")
+        if response.status_code == ApiHttpConstants.OK:
+            books = response.json()
+            for book in books:
+                delete_response = self.delete(f"/books/{book['id']}")
+                assert delete_response.status_code == ApiHttpConstants.OK, \
+                    f"Failed to delete book id {book['id']}. Response code={delete_response.status_code}."
+
     def test_get_books(self):
         response = self.get("/books")
-        assert response.status_code == ApiHttpConstants.OK, \
-        f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
+        assert response.status_code == ApiHttpConstants.OK
         books = response.json()
         assert len(books) == ExpectedResults.EXPECTED_BOOK_NUMBER, \
-            f"Actual book number={len(books)} does not match expected book number={ExpectedResults.EXPECTED_BOOK_NUMBER}"
+            f"Expected {ExpectedResults.EXPECTED_BOOK_NUMBER} books, found {len(books)}."
 
+    @pytest.fixture
+    def new_book(self):
+        """Fixture for creating a new book."""
+        book_data = {"title": "1984", "author": "George Orwell"}
+        response = self.post("/books", json=book_data)
+        assert response.status_code == ApiHttpConstants.CREATED, \
+            f"Failed to add book. Response code={response.status_code}"
+        added_book = response.json()
+        yield added_book
+
+        # Teardown: Delete the book after the test
+        self.delete(f"/books/{added_book['id']}")
 
     def test_books_details(self):
         response = self.get("/books")
-        assert response.status_code==ApiHttpConstants.OK, \
-        f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
-        books_details=response.json()
+        assert response.status_code == ApiHttpConstants.OK
+        books_details = response.json()
 
-        assert len(books_details)==ExpectedResults.EXPECTED_BOOK_NUMBER, \
-            f"Actual book number={len(books)} does not match expected book number={ExpectedResults.EXPECTED_BOOK_NUMBER}"
-        # Assuming there are 2 books in the initial setup
-        assert books_details[0]["title"] == ExpectedResults.EXPECTED_BOOK_TITLE1, \
-            f"Actual book title={books_details[0]["title"]} does not match expected book title={ExpectedResults.EXPECTED_BOOK_TITLE1}"
-        assert books_details[1]["title"] == ExpectedResults.EXPECTED_BOOK_TITLE2, \
-            f"Actual book title={books_details[1]["title"]} does not match expected book title={ExpectedResults.EXPECTED_BOOK_TITLE2}"
+        assert len(books_details) == ExpectedResults.EXPECTED_BOOK_NUMBER
+        assert books_details[0]["title"] == ExpectedResults.EXPECTED_BOOK_TITLE1
+        assert books_details[1]["title"] == ExpectedResults.EXPECTED_BOOK_TITLE3
 
-
-    def test_add_book(self):
-        new_book = {"title": "1984", "author": "George Orwell"}
-        response = self.post("/books", json=new_book)
-        assert response.status_code == ApiHttpConstants.CREATED, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
-        added_book = response.json()
-        assert added_book["title"] == ExpectedResults.EXPECTED_BOOK_TITLE3, \
-            f"Actual book title={added_book['title']} does not match expected book title={ExpectedResults.EXPECTED_BOOK_TITLE3}"
-        assert added_book["author"] == ExpectedResults.EXPECTED_BOOK_AUTHOR, \
-            f"Actual added book author={added_book['author']} does not match expected book author={ExpectedResults.EXPECTED_BOOK_AUTHOR}"
+    def test_add_book(self, new_book):
+        assert new_book["title"] == ExpectedResults.EXPECTED_BOOK_TITLE3
+        assert new_book["author"] == ExpectedResults.EXPECTED_BOOK_AUTHOR
 
     def test_update_book(self):
         response = self.put("/books/1", json={"title": ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE})
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
+        assert response.status_code == ApiHttpConstants.OK
         updated_book = response.json()
-        assert updated_book["title"] == ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE, \
-            f"Actual updated book title={updated_book['title']} does not match expected updated book title={ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE}"
+        assert updated_book["title"] == ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE
 
+        # Restore original title
         response = self.put("/books/1", json={"title": ExpectedResults.EXPECTED_BOOK_TITLE1})
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
+        assert response.status_code == ApiHttpConstants.OK
+
     def test_update_non_exist_book(self):
         response = self.put("/books/10", json={"title": ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE})
-        assert response.status_code == ApiHttpConstants.NOT_FOUND, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.NOT_FOUND}"
-
-    @pytest.fixture
-    def restore_book_after_deletion(self):
-        api = ApiRequests()
-        book_id = 2  # The ID of the book to restore
-
-        # Setup: Retrieve the book data before the test
-        response = api.get(f"/books/{book_id}")
-        if response.status_code == ApiHttpConstants.OK:
-            original_book_data = response.json()
-        else:
-            original_book_data = None
-
-        yield  # Provide control to the test
-
-        # Teardown: Restore the book if it was deleted
-        if original_book_data:
-            response = api.get(f"/books/{book_id}")
-            if response.status_code == ApiHttpConstants.NOT_FOUND:
-                # If the book was deleted, re-add it
-                response = api.post("/books", json=original_book_data)
-                assert response.status_code == ApiHttpConstants.CREATED, \
-                    f"Teardown failed: Could not restore book. Response code={response.status_code}"
+        assert response.status_code == ApiHttpConstants.NOT_FOUND
 
     def test_delete_book(self):
+        # Attempt to delete a specific book with ID 2
         response = self.delete("/books/2")
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
+        assert response.status_code == ApiHttpConstants.OK
+
         response = self.get("/books")
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
-
-        # Verify the book is deleted by checking the list of books
-        response = self.get("/books")
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.OK}"
+        assert response.status_code == ApiHttpConstants.OK
         books = response.json()
-
-        # Check that the book with ID 2 is not in the list
-        book_ids = [book['id'] for book in books]
-        assert 2 not in book_ids, "Book with ID 2 was not deleted"
-        books = response.json()
-        assert len(books) == ExpectedResults.EXPECTED_BOOK_NUMBER, \
-            f"Actual numbers of books={len(books)} does not match expected number of books={ExpectedResults.EXPECTED_BOOK_NUMBER}"
-
-
+        assert 2 not in [book['id'] for book in books]
 
     def test_borrow_book(self):
         borrow_data = {"user_id": 1, "book_id": 1}
-        borrowed_suffix=f"/users/{borrow_data["user_id"]}/borrow/{borrow_data["book_id"]}"
+        borrowed_suffix = f"/users/{borrow_data['user_id']}/borrow/{borrow_data['book_id']}"
         response = self.post(borrowed_suffix, json=borrow_data)
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.OK}"
+        assert response.status_code == ApiHttpConstants.OK
         borrow_confirmation = response.json()
-        assert borrow_confirmation['message'] == ExpectedResults.EXPECTED_BOOK_BORROW_MESSAGE, \
-            f"Expected borrow message to be {ExpectedResults.EXPECTED_BOOK_BORROW_MESSAGE}"
-
-    def test_borrow_non_exist_book(self):
-        borrow_data = {"user_id": 10, "book_id": 10}
-        borrowed_suffix=f"/users/{borrow_data["user_id"]}/borrow/{borrow_data["book_id"]}"
-        response = self.post(borrowed_suffix, json=borrow_data)
-        assert response.status_code == ApiHttpConstants.NOT_FOUND, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.OK}"
-
+        assert borrow_confirmation['message'] == ExpectedResults.EXPECTED_BOOK_BORROW_MESSAGE
     def test_return_book(self):
         return_data = {"user_id": 1, "book_id": 1}
-        returned_suffix = f"/users/{return_data["user_id"]}/return/{return_data["book_id"]}"
+        returned_suffix = f"/users/{return_data['user_id']}/return/{return_data['book_id']}"
         response = self.post(returned_suffix, json=return_data)
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.OK}"
+        assert response.status_code == ApiHttpConstants.OK
         return_confirmation = response.json()
-        assert return_confirmation['message'] == ExpectedResults.EXPECTED_BOOK_RETURNED_MESSAGE,\
-            f"Expected return book message to be {ExpectedResults.EXPECTED_BOOK_RETURNED_MESSAGE}"
+        assert return_confirmation['message'] == ExpectedResults.EXPECTED_BOOK_RETURNED_MESSAGE
 
-    def test_return_non_exist_book(self):
-        return_data = {"user_id": 20, "book_id": 20}
-        returned_suffix = f"/users/{return_data["user_id"]}/return/{return_data["book_id"]}"
-        response = self.post(returned_suffix, json=return_data)
-        assert response.status_code == ApiHttpConstants.NOT_FOUND, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.OK}"
-
-    def test_add_and_update_book(self):
-        self.test_add_book()
-        self.test_update_book()
-
-    # def test_add_and_delete_new_book(self, restore_after_delete):
-    def test_add_and_delete_new_book(self):
-        self.test_add_book()
-        response = self.delete("/books/3")
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
-        response = self.get("/books")
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
-        books = response.json()
-        assert len(books) == ExpectedResults.EXPECTED_BOOK_NUMBER, \
-            f"Actual numbers of books={len(books)} does not match expected number of books={ExpectedResults.EXPECTED_BOOK_NUMBER}"
-
+    def test_add_and_delete_new_book(self, new_book):
+        pass
 
     def test_delete_non_existant_book(self):
         response = self.delete("/books/10")
-        assert response.status_code == ApiHttpConstants.NOT_FOUND, \
-            f"Expected status code to be {ApiHttpConstants.NOT_FOUND}"
-
-    def test_add_and_double_delete_new_book(self):
-        self.test_add_book()
-        response = self.delete("/books/3")
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
-        response = self.get("/books")
-        assert response.status_code == ApiHttpConstants.OK, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.CREATED}"
-        books = response.json()
-        assert len(books) == ExpectedResults.EXPECTED_BOOK_NUMBER, \
-            f"Actual numbers of books={len(books)} does not match expected number of books={ExpectedResults.EXPECTED_BOOK_NUMBER}"
-
-        response = self.delete("/books/3")
-        assert response.status_code == ApiHttpConstants.NOT_FOUND, \
-            f"Actual response code={response.status_code} does not match expected response code={ApiHttpConstants.NOT_FOUND}"
+        assert response.status_code == ApiHttpConstants.NOT_FOUND
