@@ -1,11 +1,11 @@
-### API testing project.
+# API testing project.
 
-To run the tests:
-
-git clone https://github.com/amielnoy/RafaelApiPytestGithubActionsTest 
 
 ## installation.
-1.create virtual env:
+1.Get the git repository to your local env
+git clone https://github.com/amielnoy/RafaelApiPytestGithubActionsTest 
+
+create virtual env:(mac/linux)
 python3 -m venv venv
 
 install all packages:
