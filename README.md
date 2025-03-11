@@ -4,9 +4,9 @@ To run the tests:
 
 git clone https://github.com/amielnoy/RafaelApiPytestGithubActionsTest 
 
-install:
-1.create virtual env
-
+## installation.
+1.create virtual env:
+python3 -m venv venv
 
 install all packages:
 pip install -r requirements.txt
