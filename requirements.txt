@@ -8,4 +8,4 @@ python-dotenv
 jsonify
 flask
 gunicorn
-pallure-pytest
+allure-pytest
