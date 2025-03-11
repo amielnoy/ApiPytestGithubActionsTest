@@ -42,10 +42,10 @@ jobs:
         source .venv/bin/activate
         pytest tests
 
-    - name: Link Playwright Traces And Videos To Allure Report
-      working-directory: allure-results
-      if: failure()
-      run: echo ARTIFACT_URL=${{ steps.artifact-upload-step.outputs.artifact-url }} >> environment.properties
+    # - name: Link Playwright Traces And Videos To Allure Report
+    #   working-directory: allure-results
+    #   if: failure()
+    #   run: echo ARTIFACT_URL=${{ steps.artifact-upload-step.outputs.artifact-url }} >> environment.properties
 
     - name: Link Git Information And Browser Version To Allure Report
       working-directory: allure-results
