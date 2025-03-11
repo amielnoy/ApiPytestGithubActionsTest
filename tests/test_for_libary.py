@@ -1,12 +1,5 @@
 import pytest
 from ApiRequests.api_requests import ApiRequests
-from app import books
-from data.expected_results import ExpectedResults
-from data.globals import ApiHttpConstants
-
-
-import pytest
-from ApiRequests.api_requests import ApiRequests
 from data.expected_results import ExpectedResults
 from data.globals import ApiHttpConstants
 
@@ -22,7 +15,6 @@ class TestsBookAPI(ApiRequests):
 
     @pytest.fixture
     def new_book(self):
-        """Fixture for creating a new book."""
         book_data = {"title": "1984", "author": "George Orwell"}
         response = self.post("/books", json=book_data)
         assert response.status_code == ApiHttpConstants.CREATED, \
@@ -59,7 +51,6 @@ class TestsBookAPI(ApiRequests):
         assert response.status_code == ApiHttpConstants.NOT_FOUND
 
     def test_delete_book(self):
-        # Attempt to delete a specific book with ID 2
         response = self.delete("/books/2")
         assert response.status_code == ApiHttpConstants.OK,\
         f"can't delete book{ExpectedResults.EXPECTED_BOOK_NUMBER}"
@@ -92,15 +83,11 @@ class TestsBookAPI(ApiRequests):
         assert response.status_code == ApiHttpConstants.NOT_FOUND
 
     def test_sanity_check(self):
-        """Sanity test to ensure basic API functionality."""
-        # Check if the books endpoint is reachable and returns a status code 200
         response = self.get("/books")
         assert response.status_code == ApiHttpConstants.OK, "Books endpoint is not reachable."
 
-        # Check if the users endpoint is reachable and returns a status code 200
         response = self.get("/users")
         assert response.status_code == ApiHttpConstants.OK, "Users endpoint is not reachable."
 
-        # Check if a non-existent endpoint returns a 404 status code
         response = self.get("/non_existent_endpoint")
         assert response.status_code == ApiHttpConstants.NOT_FOUND, "Non-existent endpoint did not return 404."
