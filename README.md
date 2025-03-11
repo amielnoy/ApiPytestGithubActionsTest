@@ -25,7 +25,7 @@ flask run
 
 ## 2.Run tests:
 
-Python3 -m pytest tests
+python -m pytest --alluredir allure-results
 
 ## LOCALLY USING docker:
 
