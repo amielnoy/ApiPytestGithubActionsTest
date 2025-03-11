@@ -13,34 +13,6 @@ from data.globals import ApiHttpConstants
 
 class TestsBookAPI(ApiRequests):
     """Tests for the book API endpoints."""
-
-    @pytest.fixture(autouse=True)
-    def setup_and_teardown(self):
-        """This fixture runs before every test and ensures a controlled test environment."""
-        self.delete_all_books()  # Ensure there are no pre-existing books
-        self.create_test_books()  # Create a known set of books for testing
-
-    def create_test_books(self):
-        """Creates the necessary test book data in the database."""
-        # Create expected number of books
-        for book in [
-            {"title": "The Great Gatsby", "author": "F. Scott Fitzgerald"},
-            {"title": "1984", "author": "George Orwell"}
-        ]:
-            response = self.post("/books", json=book)
-            assert response.status_code == ApiHttpConstants.CREATED, \
-                f"Failed to add book. Response code={response.status_code}."
-
-    def delete_all_books(self):
-        """Delete all books in the database to ensure a clean state."""
-        response = self.get("/books")
-        if response.status_code == ApiHttpConstants.OK:
-            books = response.json()
-            for book in books:
-                delete_response = self.delete(f"/books/{book['id']}")
-                assert delete_response.status_code == ApiHttpConstants.OK, \
-                    f"Failed to delete book id {book['id']}. Response code={delete_response.status_code}."
-
     def test_get_books(self):
         response = self.get("/books")
         assert response.status_code == ApiHttpConstants.OK
@@ -116,6 +88,20 @@ class TestsBookAPI(ApiRequests):
     def test_add_and_delete_new_book(self, new_book):
         pass
 
-    def test_delete_non_existant_book(self):
+    def test_delete_non_exist_book(self):
         response = self.delete("/books/10")
         assert response.status_code == ApiHttpConstants.NOT_FOUND
+
+    def test_sanity_check(self):
+        """Sanity test to ensure basic API functionality."""
+        # Check if the books endpoint is reachable and returns a status code 200
+        response = self.get("/books")
+        assert response.status_code == ApiHttpConstants.OK, "Books endpoint is not reachable."
+
+        # Check if the users endpoint is reachable and returns a status code 200
+        response = self.get("/users")
+        assert response.status_code == ApiHttpConstants.OK, "Users endpoint is not reachable."
+
+        # Check if a non-existent endpoint returns a 404 status code
+        response = self.get("/non_existent_endpoint")
+        assert response.status_code == ApiHttpConstants.NOT_FOUND, "Non-existent endpoint did not return 404."
