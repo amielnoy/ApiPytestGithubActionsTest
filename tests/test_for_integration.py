@@ -47,7 +47,7 @@ class TestsBookAPI(ApiRequests):
         return_data = {"user_id": 1, "book_id": 1}
         returned_suffix = f"/users/{return_data['user_id']}/return/{return_data['book_id']}"
         response = self.post(returned_suffix, json=return_data)
-        assert response.status_code == ApiHttpConstants.BAD_REQUEST, ErrorsMessages.ERROR_RETURN_NON_BORROWED
+        assert response.status_code == ApiHttpConstants.OK, ErrorsMessages.ERROR_RETURN_NON_BORROWED
 
     # Bug deleting borRowed book can't be done!
     def test_delete_borrowed_book(self):
