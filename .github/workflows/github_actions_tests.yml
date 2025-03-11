@@ -40,7 +40,7 @@ jobs:
     - name: Run tests
       run: |
         source .venv/bin/activate
-        pytest tests  --alluredir=allure-results
+        python -m pytest tests --alluredir=allure-results
 
     # - name: Link Playwright Traces And Videos To Allure Report
     #   working-directory: allure-results
