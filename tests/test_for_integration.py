@@ -1,3 +1,5 @@
+import allure
+
 from ApiRequests.api_requests import ApiRequests
 from data.error_messages import ErrorsMessages
 from data.expected_results import ExpectedResults
@@ -6,6 +8,7 @@ from data.globals import ApiHttpConstants
 
 class TestsBookAPI(ApiRequests):
 
+    @allure.step("Add and borrow new book")
     def test_add_and_borrow_new_book(self):
         new_book_data = {"title": "Brave New World", "author": "Aldous Huxley"}
         response = self.post("/books", json=new_book_data)
@@ -20,6 +23,7 @@ class TestsBookAPI(ApiRequests):
         self.post(f"/users/{borrow_data['user_id']}/return/{borrow_data['book_id']}")
         self.delete(f"/books/{new_book['id']}")
 
+    @allure.step("Borrow already borrowed new book")
     def test_borrow_already_borrowed_book(self):
         borrow_data = {"user_id": 1, "book_id": 1}
         borrowed_suffix = f"/users/{borrow_data['user_id']}/borrow/{borrow_data['book_id']}"
@@ -31,12 +35,14 @@ class TestsBookAPI(ApiRequests):
 
         self.post(f"/users/{borrow_data['user_id']}/return/{borrow_data['book_id']}")
 
+    @allure.step("Return book not  borrowed")
     def test_return_book_not_borrowed(self):
         return_data = {"user_id": 1, "book_id": 1}
         returned_suffix = f"/users/{return_data['user_id']}/return/{return_data['book_id']}"
         response = self.post(returned_suffix, json=return_data)
         assert response.status_code == ApiHttpConstants.BAD_REQUEST, ErrorsMessages.ERROR_RETURN_NON_BORROWED
 
+    @allure.step("Delete borrowed book")
     # Bug deleting borRowed book can't be done!
     def test_delete_borrowed_book(self):
         borrow_data = {"user_id": 1, "book_id": 1}
