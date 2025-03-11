@@ -30,7 +30,6 @@ class TestsBookAPI(ApiRequests):
         added_book = response.json()
         yield added_book
 
-        # Teardown: Delete the book after the test
         self.delete(f"/books/{added_book['id']}")
 
     def test_books_details(self):
@@ -52,7 +51,6 @@ class TestsBookAPI(ApiRequests):
         updated_book = response.json()
         assert updated_book["title"] == ExpectedResults.EXPECTED_UPDATED_BOOK_TITLE1
 
-        # Restore original title
         response = self.put("/books/1", json={"title": ExpectedResults.EXPECTED_BOOK_TITLE1})
         assert response.status_code == ApiHttpConstants.OK
 
@@ -63,12 +61,13 @@ class TestsBookAPI(ApiRequests):
     def test_delete_book(self):
         # Attempt to delete a specific book with ID 2
         response = self.delete("/books/2")
-        assert response.status_code == ApiHttpConstants.OK
+        assert response.status_code == ApiHttpConstants.OK,\
+        f"can't delete book{ExpectedResults.EXPECTED_BOOK_NUMBER}"
 
         response = self.get("/books")
         assert response.status_code == ApiHttpConstants.OK
-        books = response.json()
-        assert 2 not in [book['id'] for book in books]
+        books_after_delete = response.json()
+        assert 2 not in [book['id'] for book in books_after_delete]
 
     def test_borrow_book(self):
         borrow_data = {"user_id": 1, "book_id": 1}
