@@ -42,7 +42,7 @@ jobs:
     - name: Run tests
       run: |
         source .venv/bin/activate
-        pytest tests --alluredir=allure-results
+        pytest tests --alluredir=test-results
 
     - name: Debug Allure Results Directory
       if: always()
