@@ -2,8 +2,9 @@ py
 pyee
 pytest
 requests
+requests>=2.32.2
 text-unidecode
-urllib3
+urllib3>=2.2.2
 python-dotenv
 jsonify
 flask
