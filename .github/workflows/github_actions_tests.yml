@@ -81,6 +81,7 @@ jobs:
       if: failure()
       run: echo ARTIFACT_URL=${{ steps.artifact-upload-step.outputs.artifact-url }} >> environment.properties
 
+
     - name: Link Git Information And Browser Version To Allure Report
       working-directory: allure-results
       if: always()
@@ -94,6 +95,7 @@ jobs:
          echo GIT_COMMIT_TIME=$(git show -s --format=%ci HEAD)
          echo CHROME_VERSION=$(google-chrome --product-version)
         } >> environment.properties
+
 
     - name: Generate Allure Report
       uses: simple-elf/allure-report-action@master
@@ -117,9 +119,11 @@ jobs:
         echo "allure-history directory does not exist."
         fi    
 
+
     - name: Deploy Report To Github Pages
       if: always()
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.ALLURE_GITHUB_TOKEN }}
         publish_dir: allure-history
+
