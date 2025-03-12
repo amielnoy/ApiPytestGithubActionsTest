@@ -4,14 +4,11 @@ from data.globals import ApiHttpConstants
 
 @pytest.fixture(autouse=True)
 def setup_and_teardown():
-    """This fixture runs before every test and ensures a controlled test environment."""
     api_requests = ApiRequests()
     delete_all_books(api_requests)  # Ensure there are no pre-existing books
     create_test_books(api_requests) # Create a known set of books for testing
 
 def create_test_books(api_requests):
-    """Creates the necessary test book data in the database."""
-    # Create expected number of books
     for book in [
         {"title": "The Great Gatsby", "author": "F. Scott Fitzgerald"},
         {"title": "1984", "author": "George Orwell"}
