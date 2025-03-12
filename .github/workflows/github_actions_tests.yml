@@ -45,6 +45,7 @@ jobs:
         pytest tests
 
     - name: Debug Allure Results Directory
+      if: always()
       run: |
         echo "Checking if allure-results directory exists..."
         if [ -d "allure-results" ]; then
