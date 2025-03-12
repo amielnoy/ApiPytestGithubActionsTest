@@ -44,6 +44,17 @@ jobs:
         source .venv/bin/activate
         pytest tests
 
+    - name: Debug Allure Results Directory
+      run: |
+        echo "Checking if allure-results directory exists..."
+        if [ -d "allure-results" ]; then
+          echo "allure-results directory exists."
+          echo "Listing contents of allure-results:"
+          ls -la allure-results
+        else
+          echo "allure-results directory does not exist."
+        fi    
+
     - name: Cache dependencies if tests pass
       if: success()
       uses: actions/cache/save@v4
