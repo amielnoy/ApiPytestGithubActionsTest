@@ -30,50 +30,100 @@ jobs:
         python -m venv .venv
         source .venv/bin/activate
         pip install -r requirements.txt
+    - name: Install Allure
+      run: npm install -g allure-commandline # or pip install allure-pytest if using python
 
     - name: Start Flask server
       run: |
         source .venv/bin/activate
         nohup flask run --host=0.0.0.0 -p $FLASK_PORT &
-        sleep 15  # Wait for the server to start
+        sleep 8  # Wait for the server to start
 
     - name: Run tests
       run: |
         source .venv/bin/activate
-        python -m pytest tests --alluredir=allure-results
+        pytest tests --alluredir=allure-results
 
-    # - name: Link Playwright Traces And Videos To Allure Report
-    #   working-directory: allure-results
-    #   if: failure()
-    #   run: echo ARTIFACT_URL=${{ steps.artifact-upload-step.outputs.artifact-url }} >> environment.properties
+    - name: Debug Allure Results Directory
+      if: always()
+      run: |
+        echo "Checking if allure-results directory exists..."
+        if [ -d "allure-results" ]; then
+          echo "allure-results directory exists."
+          echo "Listing contents of allure-results:"
+          ls -la allure-results
+        else
+          echo "allure-results directory does not exist."
+        fi    
+
+    - name: Cache dependencies if tests pass
+      if: success()
+      uses: actions/cache/save@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Auto-assign reviewers
+      uses: kentaro-m/auto-assign-action@v2.0.0
+      if: github.event_name == 'pull_request'
+
+    - name: Store Playwright Traces and Videos From Failed Tests
+      if: failure()
+      uses: actions/upload-artifact@v4.6.1
+      id: artifact-upload-step
+      with:
+        name: test-results
+        path: test-results/
+        retention-days: 7
+
+    - name: Link Playwright Traces And Videos To Allure Report
+      working-directory: allure-results
+      if: failure()
+      run: echo ARTIFACT_URL=${{ steps.artifact-upload-step.outputs.artifact-url }} >> environment.properties
+
 
     - name: Link Git Information And Browser Version To Allure Report
       working-directory: allure-results
       if: always()
       run: |
-          {
-           echo BUILD_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-           echo GIT_BRANCH=${{ github.head_ref || github.ref_name }}
-           echo GIT_COMMIT_ID=${{ github.sha }}
-           echo GIT_COMMIT_MESSAGE=$(git show -s --format=%s HEAD)
-           echo GIT_COMMIT_AUTHOR_NAME=$(git show -s --format='%ae' HEAD)
-           echo GIT_COMMIT_TIME=$(git show -s --format=%ci HEAD)
-           echo CHROME_VERSION=$(google-chrome --product-version)
-          } >> environment.properties
-          
+        {
+         echo BUILD_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+         echo GIT_BRANCH=${{ github.head_ref || github.ref_name }}
+         echo GIT_COMMIT_ID=${{ github.sha }}
+         echo GIT_COMMIT_MESSAGE=$(git show -s --format=%s HEAD)
+         echo GIT_COMMIT_AUTHOR_NAME=$(git show -s --format='%ae' HEAD)
+         echo GIT_COMMIT_TIME=$(git show -s --format=%ci HEAD)
+         echo CHROME_VERSION=$(google-chrome --product-version)
+        } >> environment.properties
+
+
     - name: Generate Allure Report
       uses: simple-elf/allure-report-action@master
       if: always()
       id: allure-report
       with:
-          allure_results: allure-results
-          allure_report: allure-report
-          gh_pages: gh-pages
-          allure_history: allure-history
-          
+        allure_results: allure-results
+        allure_report: allure-report
+        gh_pages: gh-pages
+        allure_history: allure-history
+
+    - name: Debug allure-history Directory creation
+      if: always()
+      run: |
+        echo "Checking if allure-history directory exists..."
+        if [ -d "allure-history" ]; then
+        echo "allure-history directory exists."
+        echo "Listing contents of allure-history:"
+        ls -la allure-history
+        else
+        echo "allure-history directory does not exist."
+        fi    
+
+
     - name: Deploy Report To Github Pages
       if: always()
       uses: peaceiris/actions-gh-pages@v4
       with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: allure-history    
+        github_token: ${{ secrets.ALLURE_GITHUB_TOKEN }}
+        publish_dir: allure-history
+
