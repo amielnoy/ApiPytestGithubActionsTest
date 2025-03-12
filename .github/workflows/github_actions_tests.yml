@@ -42,7 +42,7 @@ jobs:
     - name: Run tests
       run: |
         source .venv/bin/activate
-        pytest tests --alluredir=test-results
+        pytest tests --alluredir=allure-results
 
     - name: Debug Allure Results Directory
       if: always()
@@ -104,6 +104,19 @@ jobs:
         allure_report: allure-report
         gh_pages: gh-pages
         allure_history: allure-history
+
+    - name: Debug allure-history Directory creation
+      if: always()
+      run: |
+        echo "Checking if allure-history directory exists..."
+        if [ -d "allure-history" ]; then
+        echo "allure-history directory exists."
+        echo "Listing contents of allure-history:"
+        ls -la allure-history
+        else
+        echo "allure-history directory does not exist."
+        fi    
+
     - name: Deploy Report To Github Pages
       if: always()
       uses: peaceiris/actions-gh-pages@v4
